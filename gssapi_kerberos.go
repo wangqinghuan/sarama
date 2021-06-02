@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"strings"
 	"time"
 
 	"github.com/jcmturner/gofork/encoding/asn1"
@@ -211,8 +210,8 @@ func (krbAuth *GSSAPIKerberosAuth) Authorize(broker *Broker) error {
 	// Construct SPN using serviceName and host
 	// SPN format: <SERVICE>/<FQDN>
 
-	host := strings.SplitN(broker.addr, ":", 2)[0] // Strip port part
-	spn := fmt.Sprintf("%s/%s", broker.conf.Net.SASL.GSSAPI.ServiceName, host)
+	//host := strings.SplitN(broker.addr, ":", 2)[0] // Strip port part
+	spn := fmt.Sprintf("%s/%s", broker.conf.Net.SASL.GSSAPI.ServiceName, "hadoop.botech.com")
 
 	ticket, encKey, err := kerberosClient.GetServiceTicket(spn)
 	if err != nil {

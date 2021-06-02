@@ -25,10 +25,10 @@ var (
 )
 
 func init() {
-	flag.StringVar(&brokers, "brokers", "", "Kafka bootstrap brokers to connect to, as a comma separated list")
-	flag.StringVar(&group, "group", "", "Kafka consumer group definition")
-	flag.StringVar(&version, "version", "2.1.1", "Kafka cluster version")
-	flag.StringVar(&topics, "topics", "", "Kafka topics to be consumed, as a comma separated list")
+	flag.StringVar(&brokers, "brokers", "172.16.1.112:21007", "Kafka bootstrap brokers to connect to, as a comma separated list")
+	flag.StringVar(&group, "group", "test111", "Kafka consumer group definition")
+	flag.StringVar(&version, "version", "0.11.0.0", "Kafka cluster version")
+	flag.StringVar(&topics, "topics", "hb-human-recognition", "Kafka topics to be consumed, as a comma separated list")
 	flag.StringVar(&assignor, "assignor", "range", "Consumer group partition assignment strategy (range, roundrobin, sticky)")
 	flag.BoolVar(&oldest, "oldest", true, "Kafka consumer consume initial offset from oldest")
 	flag.BoolVar(&verbose, "verbose", false, "Sarama logging")
@@ -48,6 +48,8 @@ func init() {
 }
 
 func main() {
+	sarama.Logger = log.Default()
+
 	log.Println("Starting a new Sarama consumer")
 
 	if verbose {
@@ -65,6 +67,14 @@ func main() {
 	 */
 	config := sarama.NewConfig()
 	config.Version = version
+	config.Net.SASL.Enable = true
+	config.Net.SASL.Mechanism = sarama.SASLTypeGSSAPI
+	config.Net.SASL.GSSAPI.ServiceName = "kafka"
+	config.Net.SASL.GSSAPI.KerberosConfigPath = "C:\\krb5.conf"
+	config.Net.SASL.GSSAPI.Realm = "BOTECH.COM"
+	config.Net.SASL.GSSAPI.Username = "qdgakk"
+	config.Net.SASL.GSSAPI.KeyTabPath = "C:\\user.keytab"
+	config.Net.SASL.GSSAPI.AuthType = sarama.KRB5_KEYTAB_AUTH
 
 	switch assignor {
 	case "sticky":
@@ -89,7 +99,8 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	client, err := sarama.NewConsumerGroup(strings.Split(brokers, ","), group, config)
+	client, err := sarama.NewClient(strings.Split(brokers, ","), config)
+	//client, err := sarama.NewConsumerGroup(strings.Split(brokers, ","), group, config)
 	if err != nil {
 		log.Panicf("Error creating consumer group client: %v", err)
 	}
@@ -98,7 +109,7 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		for {
+		/*for {
 			// `Consume` should be called inside an infinite loop, when a
 			// server-side rebalance happens, the consumer session will need to be
 			// recreated to get the new claims
@@ -110,7 +121,7 @@ func main() {
 				return
 			}
 			consumer.ready = make(chan bool)
-		}
+		}*/
 	}()
 
 	<-consumer.ready // Await till the consumer has been set up
